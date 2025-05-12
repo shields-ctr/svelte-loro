@@ -1,6 +1,9 @@
 <script>
-  import {yjsExample} from '$lib/index.js';
-  yjsExample()
+  // import {yjsExample} from '$lib/YjsExample.js';
+  // yjsExample()
+  import * as Loro from '$lib/LoroExample.js';
+  Loro.DataStructures();
+  Loro.IncrementalVersions();
 </script>
 
 <h1>Welcome to SvelteKit</h1>

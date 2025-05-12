@@ -27,20 +27,21 @@ export function yjsExample() {
   console.log(ymap.toJSON()) // => { keyA: 'valueA', keyB: 'valueB' }
 }
 
+export default function connectYjsWebscoketProvider() {
+  const doc = new Y.Doc();
 
-const doc = new Y.Doc();
+  const wsProvider = new WebsocketProvider(
+    'ws://localhost:1234', 'my-roomname',
+    doc,
+    // {WebSocketPolyfill: ws} // for NodeJs...
+  )
 
-const wsProvider = new WebsocketProvider(
-  'ws://localhost:1234', 'my-roomname',
-  doc,
-  // {WebSocketPolyfill: ws} // for NodeJs...
-)
+  wsProvider.on('status', event => {
+    console.log(event.status)
+  });
 
-wsProvider.on('status', event => {
-  console.log(event.status)
-});
-
-// const indexeddbProvider = new IndexeddbPersistence(
-//   'y-indexeddb', 
-//   doc
-// );
+  // const indexeddbProvider = new IndexeddbPersistence(
+  //   'y-indexeddb', 
+  //   doc
+  // );
+}
