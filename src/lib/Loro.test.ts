@@ -1,12 +1,14 @@
+import {expect, test} from 'vitest';
 import {LoroDoc, LoroList, LoroMap, LoroText} from 'loro-crdt';
-// import {expect} from 'vitest';
+
 // Examples taken from; https://loro.dev/docs/tutorial/get_started
 
-export function LoroExample() {
+test('syncing simultaneous edits', ()=>{
   const docA = new LoroDoc();
   const docB = new LoroDoc();
   
   //...operations on docA and docB
+  // TODO
   
   // Assume docA and docB are two Loro documents in two different devices
   const bytesA = docA.export({ mode: "update" });
@@ -19,9 +21,9 @@ export function LoroExample() {
   docA.import(bytesB);
   // docA and docB are now in sync, they have the same state
   
-}
+});
 
-export function SaveState() {
+test('Save State', ()=>{
 
   // Saving documents
   const doc = new LoroDoc();
@@ -38,9 +40,9 @@ export function SaveState() {
 
   // Converting to JSON
   newDoc.toJSON();
-}
+});
 
-export function DataStructures() {
+test('Data Structures', ()=>{
   const doc = new LoroDoc();
   const list: LoroList = doc.getList("list");
   list.insert(0, "A");
@@ -50,42 +52,38 @@ export function DataStructures() {
   const map: LoroMap = doc.getMap("map");
   // map can only has string key
   map.set("key", "value");
-  console.log(doc.toJSON());
-  // expect(doc.toJSON()).toStrictEqual({
-  //   list: ["A", "B", "C"],
-  //   map: { key: "value" },
-  // });
+  expect(doc.toJSON()).toStrictEqual({
+    list: ["A", "B", "C"],
+    map: { key: "value" },
+  });
   
   // delete 2 element at index 0
   list.delete(0, 2);
-  console.log(doc.toJSON());
-  // expect(doc.toJSON()).toStrictEqual({
-  //   list: ["C"],
-  //   map: { key: "value" },
-  // });
+  expect(doc.toJSON()).toStrictEqual({
+    list: ["C"],
+    map: { key: "value" },
+  });
   
   // Insert a text container to the list
   const text = list.insertContainer(0, new LoroText());
   text.insert(0, "Hello");
   text.insert(0, "Hi! ");
   
-  console.log(doc.toJSON());
-  // expect(doc.toJSON()).toStrictEqual({
-  //   list: ["Hi! Hello", "C"],
-  //   map: { key: "value" },
-  // });
+  expect(doc.toJSON()).toStrictEqual({
+    list: ["Hi! Hello", "C"],
+    map: { key: "value" },
+  });
   
   // Insert a list container to the map
   const list2 = map.setContainer("test", new LoroList());
   list2.insert(0, 1);
-  console.log(doc.toJSON());
-  // expect(doc.toJSON()).toStrictEqual({
-  //   list: ["Hi! Hello", "C"],
-  //   map: { key: "value", test: [1] },
-  // });
-}
+  expect(doc.toJSON()).toStrictEqual({
+    list: ["Hi! Hello", "C"],
+    map: { key: "value", test: [1] },
+  });
+});
 
-export function IncrementalVersions() {
+test('Incremental Versions', ()=>{
   const doc = new LoroDoc();
   doc.getText("text").insert(0, "Hello world!");
   const data = doc.export({ mode: "snapshot" });
@@ -104,24 +102,21 @@ export function IncrementalVersions() {
     // import the snapshot
     const newDoc = new LoroDoc();
     newDoc.import(data);
-    console.log(newDoc.toJSON());
-    // expect(newDoc.toJSON()).toStrictEqual({
-    //   text: "Hello world!",
-    // });
+    expect(newDoc.toJSON()).toStrictEqual({
+      text: "Hello world!",
+    });
   
     // import update0
     newDoc.import(update0);
-    console.log(newDoc.toJSON());
-    // expect(newDoc.toJSON()).toStrictEqual({
-    //   text: "✨Hello world!",
-    // });
+    expect(newDoc.toJSON()).toStrictEqual({
+      text: "✨Hello world!",
+    });
   
     // import update1
     newDoc.import(update1);
-    console.log(newDoc.toJSON());
-    // expect(newDoc.toJSON()).toStrictEqual({
-    //   text: "😶‍🌫️✨Hello world!",
-    // });
+    expect(newDoc.toJSON()).toStrictEqual({
+      text: "😶‍🌫️✨Hello world!",
+    });
   }
   
   {
@@ -130,9 +125,40 @@ export function IncrementalVersions() {
      */
     const newDoc = new LoroDoc();
     newDoc.importUpdateBatch([update1, update0, data]);
-    console.log(newDoc.toJSON());
-    // expect(newDoc.toJSON()).toStrictEqual({
-    //   text: "😶‍🌫️✨Hello world!",
-    // });
+    expect(newDoc.toJSON()).toStrictEqual({
+      text: "😶‍🌫️✨Hello world!",
+    });
   }
-}
+});
+
+test('Sync State', ()=>{
+  const docA = new LoroDoc();
+  const docB = new LoroDoc();
+  const listA: LoroList = docA.getList("list");
+  listA.insert(0, "A");
+  listA.insert(1, "B");
+  listA.insert(2, "C");
+  // B import the ops from A
+  const data: Uint8Array = docA.export({ mode: "update" });
+  // The data can be sent to B through the network
+  docB.import(data);
+  expect(docB.toJSON()).toStrictEqual({
+    list: ["A", "B", "C"],
+  });
+  
+  const listB: LoroList = docB.getList("list");
+  listB.delete(1, 1);
+  
+  // `doc.export({mode: "update", from: version})` can encode all the ops from the version to the latest version
+  // `version` is the version vector of another document
+  const missingOps = docB.export({
+    mode: "update",
+    from: docA.oplogVersion(),
+  });
+  docA.import(missingOps);
+  
+  expect(docA.toJSON()).toStrictEqual({
+    list: ["A", "C"],
+  });
+  expect(docA.toJSON()).toStrictEqual(docB.toJSON());
+});

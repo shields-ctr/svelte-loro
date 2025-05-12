@@ -1,9 +1,11 @@
 <script>
-  // import {yjsExample} from '$lib/YjsExample.js';
-  // yjsExample()
-  import * as Loro from '$lib/LoroExample.js';
-  Loro.DataStructures();
-  Loro.IncrementalVersions();
+  
+  // TODO
+  // load LORO document from IndexedDB
+  // get websocket to server
+  // upload local updates from root or last known server sync
+  // download server updates from last known client sync
+  
 </script>
 
 <h1>Welcome to SvelteKit</h1>
