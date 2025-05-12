@@ -1,5 +1,8 @@
 // place files you want to import through the `$lib` alias in this folder.
-import * as Y from 'yjs'
+import * as Y from 'yjs';
+import {WebsocketProvider } from 'y-websocket';
+// TODO
+//import { IndexeddbPersistence } from 'y-indexeddb'
 
 export function yjsExample() {
 
@@ -23,3 +26,21 @@ export function yjsExample() {
   // Observe that the changes have merged
   console.log(ymap.toJSON()) // => { keyA: 'valueA', keyB: 'valueB' }
 }
+
+
+const doc = new Y.Doc();
+
+const wsProvider = new WebsocketProvider(
+  'ws://localhost:1234', 'my-roomname',
+  doc,
+  // {WebSocketPolyfill: ws} // for NodeJs...
+)
+
+wsProvider.on('status', event => {
+  console.log(event.status)
+});
+
+// const indexeddbProvider = new IndexeddbPersistence(
+//   'y-indexeddb', 
+//   doc
+// );
