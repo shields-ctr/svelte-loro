@@ -1,18 +1,80 @@
-import * as Y from 'yjs';
-import {WebsocketProvider } from 'y-websocket';
-import ws from 'ws';
+import express from 'express';
+import {LoroDoc} from 'loro-crdt';
+import ws, { WebSocketServer } from 'ws';
 
-const doc = new Y.Doc();
+// The SvelteKit Node adapter provides a Express middleware handler for the app
+import { handler } from '../build/handler.js';
 
-const wsProvider = new WebsocketProvider(
-  'ws://localhost:1234', 'my-roomname',
-  doc,
-  {WebSocketPolyfill: ws}
-)
+// TODO set up a session for each client?
+// https://github.com/websockets/ws/blob/master/examples/express-session-parse/index.js
 
-wsProvider.on('status', event => {
-  console.log(event.status)
+//TODO draft a more semantic websocket protocol
+// Initialize( id, state)
+// Update( delta ) // delta contains the peerId of the emitting sender
+// Save( version ) // save specified version to each clients local storage? should we just have the server save instead?
+// Load( version ) // again do we just have the server provide the version or will it just be a fallback if local storage fails?
+// Ping/Pong( id, version ) // since this is a realtime editor, we should probably track our users in realtime. 
+//   We can also augment it with versioning information so the Server can track editing drifts...
+
+// Initialize the Loro document
+const doc = new LoroDoc();
+doc.setPeerId('0')
+doc.getText("text").insert(0, "Hello world!");
+// doc.commit();
+console.log(doc.toJSON());
+console.log(doc.export({ mode: "snapshot" }));
+
+const clients = [];
+const port = 3000;
+const app = express();
+
+const wsServer = new WebSocketServer({ port });
+wsServer.on('connection', function connection(ws, request) {
+
+  ws.on('message', function incoming(message) {
+
+    console.log(message);
+    broadcast(ws, message);
+  });
+  
+  ws.on('close', function close() {
+    // TODO save Loro document somewhere?
+    // LevelDB? SQLite?
+  })
+
+  ws.on('error', 
+    console.error
+  ); // TODO probably need more cogent error handling...
+
+  // assign the client a number and send them the initial state
+  //const ip = request.socket.remoteAddress; // these will be the same for local debugging...
+  clients.push(ws);
+  const id = clients.length; // wsServer.clients.size;// TODO be wary about disconnects messing up the indices...
+  // const state = doc.export({ mode: "update" });
+  const state = doc.export({ mode: "snapshot" }); // Uint8Array
+  const message = JSON.stringify({id, state});
+  ws.send(message);
 });
 
-//oh wait; this is not server code..
-// you spin up a central socket server provided by Yjs? 
+function broadcast(sender, message) {
+
+  // update the server's copy of the document
+  doc.import(message);
+
+  // relay the updates to each other client
+  wsServer.clients.forEach(function each(client, index) {
+    if (client !== sender) {
+      client.send(message);
+    }
+  });
+}
+
+// Now serve the sveltekit app using the SvelteKit Node adapter
+app.use(express.static('build'));
+app.use(handler);
+app.listen(8080, () => {
+	console.log('listening on port 8080');
+});
+
+// TODO wemight send shallow snapshots if the server knows the last known client version...
+// https://loro.dev/docs/tutorial/encoding#shallow-snapshot-encoding
