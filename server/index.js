@@ -20,7 +20,7 @@ import { handler } from '../build/handler.js';
 const doc = new LoroDoc();
 doc.setPeerId('0')
 doc.getText("text").insert(0, "Hello world!");
-// doc.commit();
+doc.commit();
 console.log(doc.toJSON());
 console.log(doc.export({ mode: "snapshot" }));
 
@@ -30,7 +30,8 @@ const app = express();
 
 const wsServer = new WebSocketServer({ port });
 wsServer.on('connection', function connection(ws, request) {
-
+  //const ip = request.socket.remoteAddress; // these will be the same for local debugging...
+  
   ws.on('message', function incoming(message) {
 
     console.log(message);
@@ -46,20 +47,25 @@ wsServer.on('connection', function connection(ws, request) {
     console.error
   ); // TODO probably need more cogent error handling...
 
-  // assign the client a number and send them the initial state
-  //const ip = request.socket.remoteAddress; // these will be the same for local debugging...
+  // assign the client a number 
   clients.push(ws);
-  const id = clients.length; // wsServer.clients.size;// TODO be wary about disconnects messing up the indices...
-  // const state = doc.export({ mode: "update" });
-  const state = doc.export({ mode: "snapshot" }); // Uint8Array
-  const message = JSON.stringify({id, state});
-  ws.send(message);
+  const peerId = new Uint8Array([clients.length]);
+  ws.send(peerId);
+
+  // then send the current server state
+  const snapshot = doc.export({ mode: "snapshot" }); // Uint8Array
+  ws.send(snapshot);
 });
 
 function broadcast(sender, message) {
 
   // update the server's copy of the document
   doc.import(message);
+
+  // TODO if a client leaves then reconnects he will miss the gossip
+  // that means he'll instead need an update from his version to the latest version known by the server
+  // I don't think this should necessarily be the default behavior; maybe only do this update calculation
+  // after detecting a disconnection via ping pong heartbeats?
 
   // relay the updates to each other client
   wsServer.clients.forEach(function each(client, index) {
