@@ -26,16 +26,15 @@ console.log(doc.export({ mode: "snapshot" }));
 
 const clients = [];
 const port = 3000;
-const app = express();
 
 const wsServer = new WebSocketServer({ port });
 wsServer.on('connection', function connection(ws, request) {
   //const ip = request.socket.remoteAddress; // these will be the same for local debugging...
   
-  ws.on('message', function incoming(message) {
-
+  ws.on('message', (message)=>{
     console.log(message);
-    broadcast(ws, message);
+    if (message instanceof ArrayBuffer)
+      broadcast(ws, new Uint8Array(message));
   });
   
   ws.on('close', function close() {
@@ -76,7 +75,8 @@ function broadcast(sender, message) {
 }
 
 // Now serve the sveltekit app using the SvelteKit Node adapter
-app.use(express.static('build'));
+const app = express();
+// app.use(express.static('build'));
 app.use(handler);
 app.listen(8080, () => {
 	console.log('listening on port 8080');
