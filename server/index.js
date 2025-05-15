@@ -1,5 +1,5 @@
 import express from 'express';
-import {LoroDoc} from 'loro-crdt';
+import {LoroDoc, LoroMap, LoroMovableList, LoroList} from 'loro-crdt';
 import ws, { WebSocketServer } from 'ws';
 
 // The SvelteKit Node adapter provides a Express middleware handler for the app
@@ -17,10 +17,11 @@ import { handler } from '../build/handler.js';
 //   We can also augment it with versioning information so the Server can track editing drifts...
 
 // Initialize the Loro document
-const doc = new LoroDoc();
-doc.setPeerId('0')
-doc.getText("text").insert(0, "Hello world!");
-doc.commit();
+const doc = createExampleDocument();
+// new LoroDoc();
+// doc.setPeerId('0')
+// doc.getText("text").insert(0, "Hello world!");
+// doc.commit();
 console.log(doc.toJSON());
 console.log(doc.export({ mode: "snapshot" }));
 
@@ -84,3 +85,34 @@ app.listen(8080, () => {
 
 // TODO wemight send shallow snapshots if the server knows the last known client version...
 // https://loro.dev/docs/tutorial/encoding#shallow-snapshot-encoding
+
+function createExampleDocument() {
+  const doc = new LoroDoc();
+  const script = doc.getMovableList("script");
+  addLine(script, "12:00:00.00", "Operator", "JOIN", "#namek");
+  addLine(script, "12:00:01.00", "Operator", "JOIN", "#earth");
+  addLine(script, "12:00:02.00", "Raditz", "JOIN", "#earth");
+  addLine(script, "12:00:03.00", "Raditz", "PRIVMSG", "#earth","aaaahhhh");
+  addLine(script, "12:00:04.00", "Nappa", "JOIN", "#earth");
+  addLine(script, "12:00:05.00", "Vegeta", "JOIN", "#earth");
+  addLine(script, "12:00:06.00", "Nappa", "PRIVMSG", "#earth","waaaaaaagh");
+  addLine(script, "12:00:07.00", "Vegeta", "PRIVMSG", "#earth","haaaaaaaah");
+  addLine(script, "12:00:08.00", "Ginyu", "JOIN", "#earth");
+  addLine(script, "12:00:09.00", "Ginyu", "PRIVMSG", "#earth","aaaaaugh");
+  addLine(script, "12:00:10.00", "Operator", "PRIVMSG", "#earth","On the next exciting episode");
+  addLine(script, "12:00:11.00", "Frieza", "JOIN", "#earth");
+  addLine(script, "12:00:12.00", "Frieza", "PRIVMSG", "#earth","aaaaaaaaaaaaaa");
+  return doc;
+}
+
+function addLine(script, time, nick, command, ...args) {
+  const line = script.insertContainer(script.length, new LoroMap());
+  line.set("time", time);
+  line.set("nick", nick);
+  line.set("command", command);
+  
+  const list = line.setContainer("args", new LoroList());
+  for (const arg of args) {
+    list.insert(list.length, arg);
+  }
+}
