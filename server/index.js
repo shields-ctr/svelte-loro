@@ -83,7 +83,7 @@ app.listen(8080, () => {
 	console.log('listening on port 8080');
 });
 
-// TODO wemight send shallow snapshots if the server knows the last known client version...
+// TODO we might send shallow snapshots if the server knows the last known client version...
 // https://loro.dev/docs/tutorial/encoding#shallow-snapshot-encoding
 
 function createExampleDocument() {
