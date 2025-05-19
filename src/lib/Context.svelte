@@ -11,13 +11,13 @@
 
   // Set up a local replica of the application document in the context
   let id = 0;
-  const doc = new LoroDoc();
+  const doc:LoroDoc = new LoroDoc();
   setContext('doc', doc);
 
   // For every document update, update the corresponding state
   const list = doc.getMovableList('script');
   list.subscribe((transaction:LoroEventBatch) => {
-    console.log('list', transaction, doc.toJSON());
+    console.log('list', transaction);//, doc.toJSON());
 
     // change structure that I observed;
     // all lines are added to the script
@@ -53,7 +53,7 @@
   socket.binaryType = 'arraybuffer';
 
   socket.addEventListener('open', function (event) {
-    console.log('Connected');
+    console.log(`Connected to ${socket.url} at ${event.timeStamp}`);
   });
 
   socket.addEventListener('message', async function (event) {
@@ -64,12 +64,13 @@
     if (id==0) {
       id = bytes[0];
       doc.setPeerId(id);
-      console.log('id',id);
+      console.log(`Server assigned peerId=${id}`);
     }
 
     // subsequent messages contain either updates or snapshots
     else {
       doc.import(bytes);
+      console.log(`Received update of ${bytes.length} bytes from ${socket.url} at ${event.timeStamp}`);
       // Debug
       // await Promise.resolve();
       // console.log('doc', doc.toJSON());
@@ -93,7 +94,7 @@
   doc.subscribeLocalUpdates((updates) => {
     // let update = doc.export({ mode: "update", from: version });
     // version = doc.version(); // this stuff is all automatically updated no need for me to do it...
-    console.log('sending updates to server', updates);
+    console.log(`sending update of ${updates.byteLength} bytes to ${socket.url}`);
     socket.send(updates);
   });
 </script>
