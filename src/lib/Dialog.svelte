@@ -5,30 +5,12 @@
     "JOIN", "PRIVMSG", "PART", "QUIT"
   ];
   
-  // TODO instead of hard-coding, load these from the bot API? Infer them from hte script?
+  // TODO instead of hard-coding, load these from the bot API? Infer them from the script?
   let users:string[] = $state(['Operator', 'Raditz', 'Nappa', 'Vegeta', 'Ginyu', 'Frieza', 'Nappa']);
   let channels:string[] = $state(['#namek', '#earth']);
 
   // get the script from the context
   const script = getContext('script');
-  // let script = $state([
-  //   {id:0, time:"12:00:00.00",nick:"Operator",command:"JOIN", args:["#namek"]},
-  //   {id:1, time:"12:00:01.00",nick:"Operator",command:"JOIN", args:["#earth"]},
-  //   {id:2, time:"12:00:02.00",nick:"Raditz",command:"JOIN", args:["#earth"]},
-  //   {id:3, time:"12:00:03.00",nick:"Raditz",command:"PRIVMSG", args:["#earth","aaaahhhh"]},
-  //   {id:4, time:"12:00:04.00",nick:"Nappa",command:"JOIN", args:["#earth"]},
-  //   {id:5, time:"12:00:05.00",nick:"Vegeta",command:"JOIN", args:["#earth"]},
-  //   {id:6, time:"12:00:06.00",nick:"Nappa",command:"PRIVMSG", args:["#earth","waaaaaaagh"]},
-  //   {id:7, time:"12:00:07.00",nick:"Vegeta",command:"PRIVMSG", args:["#earth","haaaaaaaah"]},
-  //   {id:8, time:"12:00:08.00",nick:"Ginyu",command:"JOIN", args:["#earth"]},
-  //   {id:9, time:"12:00:09.00",nick:"Ginyu",command:"PRIVMSG", args:["#earth","aaaaaugh"]},
-  //   {id:10, time:"12:00:10.00",nick:"Operator",command:"PRIVMSG", args:["#earth","On the next exciting episode"]},
-  //   {id:11, time:"12:00:11.00",nick:"Frieza",command:"JOIN", args:["#earth"]},
-  //   {id:12, time:"12:00:12.00",nick:"Frieza",command:"PRIVMSG", args:["#earth","aaaaaaaaaaaaaa"]},
-  // ]);
-  $effect(() => {
-    console.log(script);
-  });
 
   function isSender(user: string, message: any) {
     return (Object.hasOwn(message, 'nick'))

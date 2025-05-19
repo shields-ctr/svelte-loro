@@ -84,6 +84,11 @@
     // version = doc.version();
   });
 
+  // When 
+  $effect(() => {
+    console.log(script);
+  });
+
   // For every local change, send the updates to the server
   doc.subscribeLocalUpdates((updates) => {
     // let update = doc.export({ mode: "update", from: version });

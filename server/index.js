@@ -17,6 +17,7 @@ import { handler } from '../build/handler.js';
 //   We can also augment it with versioning information so the Server can track editing drifts...
 
 // Initialize the Loro document
+let count = 0;
 const doc = createExampleDocument();
 // new LoroDoc();
 // doc.setPeerId('0')
@@ -107,6 +108,7 @@ function createExampleDocument() {
 
 function addLine(script, time, nick, command, ...args) {
   const line = script.insertContainer(script.length, new LoroMap());
+  line.set("id", ++count);
   line.set("time", time);
   line.set("nick", nick);
   line.set("command", command);
