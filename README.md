@@ -1,4 +1,6 @@
-# Trying out CRDTs
+# Svelte and Loro Experiment
+
+While learning about CRDTs(Continuously Replicated Data Types) I wanted to figure out how to incorporate them into a Svelte UI by synchronizing the replicated document with a reactive state. This proved to be non-trivial and this implementation is currently incomplete!
 
 ## Stack 
 - [Vite](https://vitest.dev/guide/)
@@ -7,7 +9,42 @@
 - [Express](https://expressjs.com/)
 - [Loro](https://loro.dev/) for CRDTs
 - [ws](https://github.com/websockets/ws) & [WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) to exchange deltas between CRDTs
-- 
+
+### What is demonstrated;
+1. A node server creates a CRDT document
+1. When a client connects over `WebSocket` it is assigned an ID and given a snapshot of the document
+1. The client applies the update to its local document
+1. When the local document changes, a Json of the document is created and a Svelte Store is set to it
+1. The svelte store updates a table-like UI
+
+### What is missing;
+- [ ] When a bound UI variable changes(ie; a user changes the text in a cell)
+- [ ] A Svelte `$effect` needs to find the corresponding value in the Loro doc and update it to match
+- [x] The Document observer for local changes needs to compute a delta and send it over websocket to the server
+- [x] The server should apply the update to it's document
+- [x] Then the server should send the update to all other clients.
+
+### Design issues
+Even if I did finish this some problems; Svelte stores do not have deep reactivity so the entire table has to be updated (granted if we use an `each` block with ids some repaint can be avoided). Going the other direction to avoid a coarse update; the effect that updates the loroDoc has to be in a cell or row sub-component which seems an awkward division... unless I'm not understanding Svelte5 snippets...
+
+Surprisingly, prior art like **Relm**'s [svelt-yjs](https://github.com/relm-us/svelt-yjs/blob/main/src/types/array.ts) uses this coarse approach as well. Same with the [SyncedStore](https://github.com/YousefED/SyncedStore/blob/main/packages/svelte/src/index.ts) project.
+
+### Better Approaches
+What we really want is *not* to synchronize with a Svelte `Store`(since they use Svelte4's coarse, pre-compiled approach), but rather to synchronize with Svelte5's fine-grained, run-time `Runes`. These rely on Proxies to intercept mutations and invoke listeners.
+
+One approach might be to instrument both SvelteState mutations, and LoroDoc observers to replicate changes in each other. There are some difficulties with this;
+ - Loro change transactions have an undocumented structure that would have to be reverse engineered to make analogous changes in the Svelte State's POJO using some JsonPath-like access
+ - Loro doc snapshots can be delivered as a current state, or state and delta's. We'd also need to replicate snapshots without clobbering the State rune's proxies.
+ - We'd have to find some way to Proxy each Svelte state proxy, linking it to the corresponding document container or value. THis is less clear in my head since I have less experience with Js Reflection.
+
+Definitely non-trivial. Fortunately I found one of the winners of the 2025 Svelte Society's hackathon; [SyncroState](https://syncrostate.pages.dev/). It uses `Yjs` and not `Loro` which isn't too big a deal- Yjs was actually my first choice because the environment was older and more fleshed out, the main author is a well-respected researcher and open source contributor.
+
+> I switched to Loro when I didn't want to use the prepackaged WebSocket server because of increased complexity. And the `y-provider` interface for making your own custom providers was poorly documented. Which was a mistake; you have to figure out the server from scratch anyways with Loro...
+
+Furthermore SyncroState also implements schema validation which should help a lot in enforcing contracts in these distributed applications.
+
+### Next Steps
+I'm just going to shelve this for now, and try again with Yjs and SyncroState. It might be worth picking this up again if Loro tips the balance.
 
 ## TODO
 - [x] figure out to host a Svelte App on a custom Node Server
