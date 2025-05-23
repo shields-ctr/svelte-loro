@@ -33,9 +33,9 @@ Surprisingly, prior art like **Relm**'s [svelt-yjs](https://github.com/relm-us/s
 What we really want is *not* to synchronize with a Svelte `Store`(since they use Svelte4's coarse, pre-compiled approach), but rather to synchronize with Svelte5's fine-grained, run-time `Runes`. These rely on Proxies to intercept mutations and invoke listeners.
 
 One approach might be to instrument both SvelteState mutations, and LoroDoc observers to replicate changes in each other. There are some difficulties with this;
- - Loro change transactions have an undocumented structure that would have to be reverse engineered to make analogous changes in the Svelte State's POJO using some JsonPath-like access
+ - Loro change transactions have an undocumented structure that would have to be reverse engineered to make analogous changes in the Svelte State's POJO using some [JsonPatch-like](https://datatracker.ietf.org/doc/html/rfc6902#page-4) access
  - Loro doc snapshots can be delivered as a current state, or state and delta's. We'd also need to replicate snapshots without clobbering the State rune's proxies.
- - We'd have to find some way to Proxy each Svelte state proxy, linking it to the corresponding document container or value. THis is less clear in my head since I have less experience with Js Reflection.
+ - We'd have to find some way to Proxy each Svelte state proxy, linking it to the corresponding document container or value. This is less clear in my head since I have less experience with Js Reflection.
 
 Definitely non-trivial. Fortunately I found one of the winners of the 2025 Svelte Society's hackathon; [SyncroState](https://syncrostate.pages.dev/). It uses `Yjs` and not `Loro` which isn't too big a deal- Yjs was actually my first choice because the environment was older and more fleshed out, the main author is a well-respected researcher and open source contributor.
 
@@ -45,6 +45,15 @@ Furthermore SyncroState also implements schema validation which should help a lo
 
 ### Next Steps
 I'm just going to shelve this for now, and try again with Yjs and SyncroState. It might be worth picking this up again if Loro tips the balance.
+
+### Note about SvelteKit & Node
+To implement the websocket server I used a custom Node server. This complicates the build process and the debugging. SvelteKit's Node adapter produces a build that provides ExpressJs-flavored middleware to handle all your web app requests. You can pass this to your custom Node server that is built outside of your Sveltekit project.
+
+To debug you spin up the dev mode(`npm run dev) then spin up your custom server(possibly in a separate debugger). They will serve on different ports so you can mix the development HMR server with your backend services.
+
+To build for production you build SvelteKit as normal (`npm run build`) then package the build with your custom server.
+
+Anyways, it was a bit of a pain to figure out so it's worth noting.
 
 ## TODO
 - [x] figure out to host a Svelte App on a custom Node Server
